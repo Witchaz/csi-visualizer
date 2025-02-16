@@ -13,14 +13,39 @@ from multiprocessing import Process
 from matplotlib.artist import Artist
 
 #selected_mac = sys.argv[1]
+<<<<<<< HEAD
+from scapy.all import ARP, Ether, srp
 
+'''
+def get_mac():
+    target_ip = "192.168.1.1/16"  # เปลี่ยนให้ตรงกับ network
+    arp = ARP(pdst=target_ip)
+    ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+    packet = ether / arp
+    result = srp(packet, timeout=3, verbose=False)[0]
+    
+    for sent, received in result:
+        print(f"IP: {received.psrc}, MAC: {received.hwsrc}")
+    print(result[0][1].hwsrc)
+    return result[0][1].hwsrc.replace(":","") if result else None
+
+selected_mac = get_mac()
+print(f"Selected MAC: {selected_mac}")
+'''
+=======
+
+>>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
 BANDWIDTH = 20
 
 # number of subcarrier
 NSUB = int(BANDWIDTH * 3.2)
 
 # : 제외
+<<<<<<< HEAD
+selected_mac = '5c0214fb6552'
+=======
 selected_mac = 'dca6328e1dcb'
+>>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
 show_packet_length = 100
 GAP_PACKET_NUM = 20
 
@@ -84,8 +109,14 @@ def sniffing(nicname, mac_address):
         # MAC Address 추출
         # UDP Payload에서 Four Magic Byte (0x11111111) 이후 6 Byte는 추출된 Mac Address 의미
         mac = udp.data[4:10].hex()
+<<<<<<< HEAD
+        #print("udp : ",udp.data[4:10].hex()," Data type : ", type(udp.data[4:10].hex()))
+        if mac != mac_address:
+            #print(mac , "!=" , mac_address)
+=======
 
         if mac != mac_address:
+>>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
             continue
 
 
@@ -157,4 +188,8 @@ def sniffing(nicname, mac_address):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     sniffing('wlan0', selected_mac)
+=======
+    sniffing('wlan0', selected_mac)
+>>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
