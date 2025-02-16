@@ -20,12 +20,8 @@ BANDWIDTH = 20
 NSUB = int(BANDWIDTH * 3.2)
 
 # : 제외
-<<<<<<< HEAD
 #selected_mac = 'dca6328e1dcb'
 selected_mac = '5c0214fb6552'
-=======
-selected_mac = 'dca6328e1dcb'
->>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
 show_packet_length = 100
 GAP_PACKET_NUM = 20
 
@@ -38,10 +34,7 @@ def truncate(num, n):
 
 def sniffing(nicname, mac_address):
     print('Start Sniifing... @', nicname, 'UDP, Port 5500')
-<<<<<<< HEAD
     print('mac address : ' , mac_address)
-=======
->>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
     sniffer = pcap.pcap(name=nicname, promisc=True, immediate=True, timeout_ms=50)
     sniffer.setfilter('udp and port 5500')
 
@@ -95,20 +88,13 @@ def sniffing(nicname, mac_address):
         mac = udp.data[4:10].hex()
 
         if mac != mac_address:
-<<<<<<< HEAD
             #print( mac, "!=", mac_address)
-=======
->>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
             continue
 
 
         # Four Magic Byte + 6 Byte Mac Address + 2 Byte Sequence Number + 2 Byte Core and Spatial Stream Number + 2 Byte Chanspac + 2 Byte Chip Version 이후 CSI
         # 4 + 6 + 2 + 2 + 2 + 2 = 18 Byte 이후 CSI 데이터
         csi = udp.data[18:]
-<<<<<<< HEAD
-=======
-
->>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
         bandwidth = ip.__hdr__[2][2]
         nsub = int(bandwidth * 3.2)
 
@@ -173,8 +159,4 @@ def sniffing(nicname, mac_address):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     sniffing('wlan0', selected_mac)
-=======
-    sniffing('wlan0', selected_mac)
->>>>>>> 97d59237dd54a4b0590ca14226ce15709b4670ee
