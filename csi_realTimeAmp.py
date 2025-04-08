@@ -20,6 +20,12 @@ selected_mac = '5c0214fb6552'
 show_packet_length = 100
 GAP_PACKET_NUM = 20
 
+# Create CSI data folder
+CSI_FOLDER = 'csi_data'
+if not os.path.exists(CSI_FOLDER):
+    os.makedirs(CSI_FOLDER)
+    print(f"Created directory: {CSI_FOLDER}")
+
 def get_mac():
     """
     Scans the network to find MAC addresses.
@@ -44,29 +50,32 @@ def truncate(num, n):
 
 def setup_csv_file():
     """
-    Creates a new CSV file with timestamp and initializes the header.
+    Creates a new CSV file with timestamp in the csi_data folder.
     Returns the file path and DataFrame.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"csi_data_{timestamp}.csv"
+    filepath = os.path.join(CSI_FOLDER, filename)
     
     # Create DataFrame with subcarrier columns
     columns = ['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)]
     df = pd.DataFrame(columns=columns)
-    df.to_csv(filename, index=False)
+    df.to_csv(filepath, index=False)
     
+    print(f"Created new CSV file: {filepath}")
     return filename, df
 
 def append_to_csv(filename, timestamp, csi_data):
     """
-    Appends new CSI data to the CSV file.
+    Appends new CSI data to the CSV file in the csi_data folder.
     """
+    filepath = os.path.join(CSI_FOLDER, filename)
     # Create a new row with timestamp and CSI data
     new_row = [timestamp] + csi_data
     df = pd.DataFrame([new_row], columns=['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)])
     
     # Append to CSV without writing the header
-    df.to_csv(filename, mode='a', header=False, index=False)
+    df.to_csv(filepath, mode='a', header=False, index=False)
 
 def setup_plot():
     """
@@ -146,7 +155,7 @@ def sniffing(nicname, mac_address):
     
     # Setup CSV file for recording
     csv_filename, _ = setup_csv_file()
-    print(f"Recording CSI data to {csv_filename}")
+    print(f"Recording CSI data to {os.path.join(CSI_FOLDER, csv_filename)}")
     
     before_ts = 0.0
     fig, ax, line_list, txt, y_list = setup_plot()
