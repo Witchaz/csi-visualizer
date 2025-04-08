@@ -42,6 +42,32 @@ def truncate(num, n):
     integer = int(num * (10 ** n)) / (10 ** n)
     return float(integer)
 
+def setup_csv_file():
+    """
+    Creates a new CSV file with timestamp and initializes the header.
+    Returns the file path and DataFrame.
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"csi_data_{timestamp}.csv"
+    
+    # Create DataFrame with subcarrier columns
+    columns = ['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)]
+    df = pd.DataFrame(columns=columns)
+    df.to_csv(filename, index=False)
+    
+    return filename, df
+
+def append_to_csv(filename, timestamp, csi_data):
+    """
+    Appends new CSI data to the CSV file.
+    """
+    # Create a new row with timestamp and CSI data
+    new_row = [timestamp] + csi_data
+    df = pd.DataFrame([new_row], columns=['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)])
+    
+    # Append to CSV without writing the header
+    df.to_csv(filename, mode='a', header=False, index=False)
+
 def setup_plot():
     """
     Sets up the matplotlib plot for real-time visualization.
@@ -118,6 +144,10 @@ def sniffing(nicname, mac_address):
     sniffer = pcap.pcap(name=nicname, promisc=True, immediate=True, timeout_ms=50)
     sniffer.setfilter('udp and port 5500')
     
+    # Setup CSV file for recording
+    csv_filename, _ = setup_csv_file()
+    print(f"Recording CSI data to {csv_filename}")
+    
     before_ts = 0.0
     fig, ax, line_list, txt, y_list = setup_plot()
     minmax = []
@@ -147,6 +177,10 @@ def sniffing(nicname, mac_address):
         csi = udp.data[18:]
         bandwidth = ip.__hdr__[2][2]
         csi_data = process_csi_data(csi, bandwidth)
+        
+        # Record to CSV
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        append_to_csv(csv_filename, current_time, csi_data)
         
         # Update plot
         idx += 1
