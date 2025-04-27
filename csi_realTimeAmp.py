@@ -48,28 +48,11 @@ def truncate(num, n):
     integer = int(num * (10 ** n)) / (10 ** n)
     return float(integer)
 
-def setup_csv_file():
-    """
-    Creates a new CSV file with timestamp in the csi_data folder.
-    Returns the file path and DataFrame.
-    """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"csi_data_{timestamp}.csv"
-    filepath = os.path.join(CSI_FOLDER, filename)
-    
-    # Create DataFrame with subcarrier columns
-    columns = ['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)]
-    df = pd.DataFrame(columns=columns)
-    df.to_csv(filepath, index=False)
-    
-    print(f"Created new CSV file: {filepath}")
-    return filename, df
 
-def append_to_csv(filename, timestamp, csi_data):
+def append_to_csv(filepath, timestamp, csi_data):
     """
     Appends new CSI data to the CSV file in the csi_data folder.
     """
-    filepath = os.path.join(CSI_FOLDER, filename)
     # Create a new row with timestamp and CSI data
     new_row = [timestamp] + csi_data
     df = pd.DataFrame([new_row], columns=['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)])
@@ -145,6 +128,32 @@ def update_plot(line_list, y_list, csi_data, minmax, gap_count, txt, ax):
     
     return txt, minmax, (gap_count + 1) % GAP_PACKET_NUM
 
+def setup_csv_file():
+    """
+    Creates a new CSV file with timestamp in the csi_data folder.
+    Returns the file path and DataFrame.
+    """
+    files = os.listdir(CSI_FOLDER)
+    for i in files:
+        print(i)
+
+    dataset_folder = input('Enter Label : ')
+    file_location = (CSI_FOLDER + "/" + dataset_folder) 
+    if not os.path.exists(file_location):
+        os.makedirs(file_location)
+        print(f"Created directory: {file_location}")
+
+    count = len([name for name in os.listdir(file_location) if os.path.isfile(os.path.join(file_location, name))])
+    filename = f"dataset_folder_{count}.csv"
+    filepath = os.path.join(file_location, filename)
+    
+    # Create DataFrame with subcarrier columns
+    columns = ['timestamp'] + [f'subcarrier_{i}' for i in range(NSUB)]
+    df = pd.DataFrame(columns=columns)
+    df.to_csv(filepath, index=False)
+    
+    print(f"Created new CSV file: {filepath}")
+    return filepath, df
 def sniffing(nicname, mac_address):
     """
     Main function that captures and processes CSI data in real-time.
@@ -154,8 +163,8 @@ def sniffing(nicname, mac_address):
     sniffer.setfilter('udp and port 5500')
     
     # Setup CSV file for recording
-    csv_filename, _ = setup_csv_file()
-    print(f"Recording CSI data to {os.path.join(CSI_FOLDER, csv_filename)}")
+    csv_filepath, _ = setup_csv_file()
+    print(f"Recording CSI data to {csv_filepath}")
     
     before_ts = 0.0
     fig, ax, line_list, txt, y_list = setup_plot()
@@ -189,7 +198,7 @@ def sniffing(nicname, mac_address):
         
         # Record to CSV
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        append_to_csv(csv_filename, current_time, csi_data)
+        append_to_csv(csv_filepath, current_time, csi_data)
         
         # Update plot
         idx += 1
