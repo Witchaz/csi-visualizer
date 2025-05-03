@@ -5,20 +5,26 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-from datetime import datetime
 import time
+import keyboard
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from multiprocessing import Process
 from matplotlib.artist import Artist
 from scapy.all import ARP, Ether, srp
+from datetime import datetime
+from threading import Thread
 
 # Global configuration
 BANDWIDTH = 20
 NSUB = int(BANDWIDTH * 3.2)
-selected_mac = '5c0214fb6552'
-show_packet_length = 100
+SELECTED_MAC = '5c0214fb6552'
+SHOW_PACKET_LENGTH = 100
 GAP_PACKET_NUM = 20
+
+#Flag
+test_mode = 0
+
 
 # Create CSI data folder
 CSI_FOLDER = 'csi_data'
@@ -68,15 +74,15 @@ def setup_plot():
     plt.ion()
     fig, ax = plt.subplots(figsize=(12, 8))
     
-    x = np.arange(0, show_packet_length, 1)
-    y_list = [[0 for _ in range(show_packet_length)] for _ in range(NSUB)]
+    x = np.arange(0, SHOW_PACKET_LENGTH, 1)
+    y_list = [[0 for _ in range(SHOW_PACKET_LENGTH)] for _ in range(NSUB)]
     line_list = []
     
     for y in y_list:
         line, = ax.plot(x, y, alpha=0.5)
         line_list.append(line)
     
-    plt.title(f'{selected_mac}', fontsize=18)
+    plt.title(f'{SELECTED_MAC}', fontsize=18)
     plt.ylabel('Signal Amplitude', fontsize=16)
     plt.xlabel('Packet', fontsize=16)
     plt.ylim(0, 1500)
@@ -107,7 +113,7 @@ def update_plot(line_list, y_list, csi_data, minmax, gap_count, txt, ax):
         del y[0]
         new_y = csi_data[i]
         y.append(new_y)
-        line_list[i].set_xdata(np.arange(0, show_packet_length, 1))
+        line_list[i].set_xdata(np.arange(0, SHOW_PACKET_LENGTH, 1))
         line_list[i].set_ydata(y)
         
         # Update min-max values
@@ -138,13 +144,19 @@ def setup_csv_file():
         print(i)
 
     dataset_folder = input('Enter Label : ')
+    
+    if dataset_folder == "Test":
+        global test_mode
+        test_mode = 1
+        return f"{CSI_FOLDER}/" , None
+
     file_location = (CSI_FOLDER + "/" + dataset_folder) 
     if not os.path.exists(file_location):
         os.makedirs(file_location)
         print(f"Created directory: {file_location}")
 
     count = len([name for name in os.listdir(file_location) if os.path.isfile(os.path.join(file_location, name))])
-    filename = f"dataset_folder_{count}.csv"
+    filename = f"{dataset_folder}_{count}.csv"
     filepath = os.path.join(file_location, filename)
     
     # Create DataFrame with subcarrier columns
@@ -170,8 +182,11 @@ def sniffing(nicname, mac_address):
     fig, ax, line_list, txt, y_list = setup_plot()
     minmax = []
     gap_count = 0
-    idx = show_packet_length - 1
-    
+    idx = SHOW_PACKET_LENGTH - 1
+
+    start = time.time()
+    print(f"{'-*' * 30} \n Start Recording....\n Press any Key to Exit \n {'-*' * 30} ")
+
     for ts, pkt in sniffer:
         # Skip duplicate timestamps
         if int(ts) == int(before_ts):
@@ -197,8 +212,9 @@ def sniffing(nicname, mac_address):
         csi_data = process_csi_data(csi, bandwidth)
         
         # Record to CSV
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        append_to_csv(csv_filepath, current_time, csi_data)
+        if test_mode == 0 :
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+            append_to_csv(csv_filepath, current_time, csi_data)
         
         # Update plot
         idx += 1
@@ -209,10 +225,13 @@ def sniffing(nicname, mac_address):
         fig.canvas.flush_events()
         before_ts = ts
         
-        # Check for exit condition
-        if keyboard.is_pressed('s'):
-            print("Stop Collecting...")
+        end = time.time() - start 
+        
+        if test_mode == 0 and end >= 20 or keyboard.is_pressed('q'):
+            print(f"{'-*' * 30} \n Stop Recording....\n record for {end:.2f} seconds \n{'-*' * 30} ")
             exit()
 
+
 if __name__ == '__main__':
-    sniffing('wlan0', selected_mac)
+    t = Thread(target=sniffing('wlan0', SELECTED_MAC), daemon=True)
+    t.start()
